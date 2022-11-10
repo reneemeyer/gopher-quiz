@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
 	csvFilename := flag.String("csv", "problems.csv", " a csv file in the format of question, answer")
+	timeLimit := flag.Int("limit", 30, "the time limit for the quiz in seconds")
 	flag.Parse()
 	file, err := os.Open(*csvFilename)
 	if err != nil {
@@ -22,19 +24,35 @@ func main() {
 	}
 
 	problems := parseLines(lines)
+	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
 
 	// need to keep track of how many we get correct
 	correct := 0
+problemloop:
 	for i, p := range problems {
 		fmt.Printf("Problem #%d: %s = \n", i+1, p.q)
-		// read in an answer
-		var answer string
-		fmt.Scanf("%s\n", &answer)
-		if answer == p.a {
-			correct++
-			fmt.Println("Correct 🥰")
-		} else {
-			fmt.Println("🤡 haha loser")
+		// make a go routine that sends a message when we get an answer from the user
+		answerCh := make(chan string)
+		go func() {
+			var answer string
+			fmt.Scanf("%s\n", &answer)
+			answerCh <- answer
+		}()
+		// it's always waiting for one case or the other
+		select {
+		case <-timer.C:
+			fmt.Println()
+			// breaks out of prob loop so you don't have to replicate the line
+			break problemloop
+			// return breaks out of the for loop, break would break out of the select
+			//return
+		case answer := <-answerCh:
+			if answer == p.a {
+				correct++
+				fmt.Println("Correct 🥰")
+			} else {
+				fmt.Println("🤡 haha loser")
+			}
 		}
 	}
 
