@@ -14,3 +14,8 @@ To use a custom problem set from another csv:
 
 1. Import csv into root level of project. Csv must be in `question,answer` format  
 2. `go build . && ./gopher-quiz -csv=<csv filename>`
+
+## Tests
+
+- coming soon, ok? relax!
+
